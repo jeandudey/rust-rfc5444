@@ -38,6 +38,6 @@ Licensed under either of
 
 # NOOOOOOOOOO YOU CAN'T TARGET OLD COMPILERS, NEWER FEATURINOS ARE AVAILABLE
 
-![brrguy](https://github.com/jeandude/rust-rfc5444/raw/master/docs/brrrguy.jpeg)
+![brrguy](https://raw.githubusercontent.com/jeandudey/rust-rfc5444/master/docs/brrrguy.jpg)
 
 - Hahaha Debian oldstable rustc go brrrrrrrrrr.
