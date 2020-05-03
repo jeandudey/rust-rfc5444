@@ -1,48 +1,63 @@
-use crate::{AddressBlock, AddressBlockFlags, Error, Tlv, TlvFlags};
+use crate::{
+    AddressBlock,
+    AddressBlockFlags,
+    Buf,
+    Error,
+    PktHeader,
+    PktHeaderFlags,
+    RFC5444_VERSION,
+    Tlv,
+    TlvBlockIterator,
+    TlvFlags,
+};
 
-#[inline(always)]
-fn check_len(input: &[u8], len: usize) -> Result<(), Error> {
-    if input.len() < len {
-        return Err(Error::UnexpectedEof);
+pub fn pkt_header<'a>(buf: &mut Buf<'a>) -> Result<PktHeader<'a>, Error> {
+    // Parse <version> and <pkt-flags>
+    let (version, flags) = buf.get_u8().map(|b| {
+        ((b & 0xf0) >> 4, PktHeaderFlags::from_bits(b & 0x0f).unwrap())
+    })?;
+
+    if version != RFC5444_VERSION {
+        return Err(Error::InvalidVersion);
     }
 
-    Ok(())
-}
+    // Parse <pkt-seq-num>?
+    let has_seq_num = flags.contains(PktHeaderFlags::HAS_SEQ_NUM);
 
-fn parse_u16<'a>(input: &'a [u8]) -> Result<(&'a [u8], usize), Error> {
-    check_len(input, 2)?;
+    let mut seq_num = None;
+    if has_seq_num {
+        seq_num = Some(buf.get_ne_u16()?);
+    }
 
-    let mut length_buf = [0u8; 2];
-    let l = &input[..2];
-    length_buf.copy_from_slice(l);
-    let length = usize::from(u16::from_be_bytes(length_buf));
+    // Parse <tlv-block>?
+    let has_tlv = flags.contains(PktHeaderFlags::HAS_SEQ_NUM);
 
-    Ok((&input[2..], length))
+    let mut block = None;
+    if has_tlv {
+        block = Some(tlv_block(buf)?);
+    }
+
+    Ok(PktHeader {
+        version,
+        seq_num,
+        tlv_block: block,
+    })
 }
 
 pub fn address_block<'a>(
-    input: &'a [u8],
+    buf: &mut Buf<'a>,
     address_length: usize,
-) -> Result<(&'a [u8], AddressBlock), Error> {
-    check_len(input, 2)?;
-
+) -> Result<AddressBlock<'a>, Error> {
     // Parse <num-addr> and <addr-flags>
-    let mut i = 0;
-    let num_addr = usize::from(input[i]);
-    let addr_flags = AddressBlockFlags::from_bits(input[i + 1]).unwrap();
-    i += 2;
+    let num_addr = buf.get_u8().map(usize::from)?;
+    let addr_flags = AddressBlockFlags::from_bits(buf.get_u8()?).unwrap();
 
     let mut head_length = 0;
     let mut head = None;
     let has_head = addr_flags.contains(AddressBlockFlags::HAS_HEAD);
     if has_head {
-        check_len(&input[i..], 1)?;
-        head_length = usize::from(input[i]);
-        i += 1;
-        check_len(&input[i..], head_length)?;
-        let h = &input[i..];
-        head = Some(&h[..head_length]);
-        i += head_length;
+        head_length = buf.get_u8().map(usize::from)?;
+        head = Some(buf.get_bytes(head_length)?);
     }
 
     // Parse (<tail-length><tail>?)?
@@ -55,19 +70,15 @@ pub fn address_block<'a>(
         (false, false) | (true, true) => (),
         // parse <tail-length> and <tail> (if <tail-length> is not 0)
         (true, false) => {
-            tail_length = usize::from(input[i]);
-            i += 1;
+            tail_length = buf.get_u8().map(usize::from)?;
 
             if tail_length != 0 {
-                let t = &input[i..];
-                tail = Some(&t[..tail_length]);
-                i += tail_length;
+                tail = Some(buf.get_bytes(tail_length)?);
             }
         },
         // parse <tail-length>
         (false, true) => {
-            tail_length = usize::from(input[i]);
-            i += 1;
+            tail_length = buf.get_u8().map(usize::from)?;
         },
     }
 
@@ -75,9 +86,7 @@ pub fn address_block<'a>(
     let mid_length = address_length - head_length - tail_length;
     let mut mid = None;
     if mid_length != 0 {
-        let m = &input[i..];
-        mid = Some(&m[..mid_length]);
-        i += mid_length;
+        mid = Some(buf.get_bytes(mid_length)?);
     }
 
     // Parse <prefix-length>*
@@ -97,83 +106,46 @@ pub fn address_block<'a>(
 
     let mut prefix_lengths = None;
     if prefix_length_fields != 0 {
-        let pfs = &input[i..];
-        prefix_lengths = Some(&pfs[..prefix_length_fields]);
-        i += prefix_length_fields;
-
-        for pf in prefix_lengths.unwrap() {
+        let pfs = buf.get_bytes(prefix_length_fields)?;
+        for pf in pfs {
             if usize::from(*pf) > (8 * address_length) {
                 return Err(Error::PrefixTooLarge);
             }
         }
+
+        prefix_lengths = Some(pfs);
     }
 
-    let addr_block = AddressBlock {
+    Ok(AddressBlock {
         num_addr,
         head,
         tail,
         mid,
         prefix_lengths,
-    };
-
-    Ok((&input[i..], addr_block))
+    })
 }
 
-/// Iterator over a TLV block
-pub struct TlvBlockIterator<'a> {
-    /// Tlv block buffer
-    buf: &'a [u8],
-}
-
-impl<'a> Iterator for TlvBlockIterator<'a> {
-    type Item = Result<Tlv<'a>, Error>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.buf.len() == 0 {
-            return None;
-        }
-
-        match tlv(self.buf) {
-            Ok((buf, tlv)) => {
-                self.buf = buf;
-                return Some(Ok(tlv));
-            },
-            Err(e) => Some(Err(e)),
-        }
-    }
-}
 
 /// Parse a <tlv-block>
 pub fn tlv_block<'a>(
-    input: &'a [u8]
-) -> Result<(&'a [u8], TlvBlockIterator<'a>), Error> {
-    let (input, length) = parse_u16(input)?;
-    check_len(input, length)?;
+    buf: &mut Buf<'a>,
+) -> Result<TlvBlockIterator<'a>, Error> {
+    let length = buf.get_ne_u16().map(usize::from)?;
+    let block = buf.get_bytes(length).map(Buf::new)?;
 
-    let iter = TlvBlockIterator {
-        buf: input,
-    };
-
-    Ok((&input[length..], iter))
+    Ok(TlvBlockIterator { buf: block })
 }
 
 /// Parse a `<tlv>`
-pub fn tlv<'a>(input: &'a [u8]) -> Result<(&'a [u8], Tlv<'a>), Error> {
-    let mut i = 0;
-
-    check_len(input, 2)?;
-
+pub fn tlv<'a>(buf: &mut Buf<'a>) -> Result<Tlv<'a>, Error> {
     // Parse <tlv-type> and <tlv-flag>
-    let r#type = input[i];
-    let flags = TlvFlags::from_bits(input[i + 1]).unwrap();
-    i += 2;
+    let r#type = buf.get_u8()?;
+    let flags = buf.get_u8().map(TlvFlags::from_bits)?.unwrap();
 
     // Parse <tlv-type-ext> if exists
     let mut type_ext = None;
     if flags.contains(TlvFlags::HAS_TYPE_EXT) {
-        check_len(&input[i..], 1)?;
-        type_ext = Some(input[i]);
-        i += 1;
+        type_ext = Some(buf.get_u8()?);
     }
 
     // Parse (<index-start><index-end>?)?
@@ -187,62 +159,44 @@ pub fn tlv<'a>(input: &'a [u8]) -> Result<(&'a [u8], Tlv<'a>), Error> {
         (false, false) => (),
         // only <index-start>
         (true, false) => {
-            check_len(&input[i..], 1)?;
-            start_index = Some(input[i]);
-            i += 1;
+            start_index = Some(buf.get_u8()?);
         },
         // both <index-start>,<index-stop>
         (false, true) | (true, true) => {
-            check_len(&input[i..], 2)?;
-            start_index = Some(input[i]);
-            stop_index = Some(input[i + 1]);
-            i += 2;
+            start_index = Some(buf.get_u8()?);
+            stop_index = Some(buf.get_u8()?);
         },
     }
 
     // Parse <length><value>
-    let mut value = None;
     let has_value = flags.contains(TlvFlags::HAS_VALUE);
     let has_extlen = flags.contains(TlvFlags::HAS_EXT_LEN);
+
+    let mut value = None;
     match (has_value, has_extlen) {
         // do nothing
         (false, false) | (false, true) => (),
         // <length> is 8 bits
         (true, false) => {
-            check_len(&input[i..], 1)?;
-            let length = usize::from(input[i]);
-            i += 1;
-
+            let length = buf.get_u8().map(usize::from)?;
             if length > 0 {
-                check_len(&input[i..], length)?;
-                let v = &input[i..];
-                let v = &v[..length];
-                i += length;
-                value = Some(v);
+                value = Some(buf.get_bytes(length)?);
             }
         }
         // <length> is 16 bits
         (true, true) => {
-            let (_, length) = parse_u16(&input[i..])?;
-            i += 2;
-
+            let length = buf.get_ne_u16().map(usize::from)?;
             if length > 0 {
-                check_len(&input[i..], length)?;
-                let v = &input[i..];
-                let v = &v[..length];
-                i += length;
-                value = Some(v);
+                value = Some(buf.get_bytes(length)?);
             }
         }
     }
 
-    let tlv = Tlv {
+    Ok(Tlv {
         r#type,
         type_ext,
         start_index,
         stop_index,
         value,
-    };
-
-    Ok((&input[i..], tlv))
+    })
 }
