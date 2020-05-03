@@ -1,0 +1,28 @@
+
+[package]
+name = "rfc5444-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.3"
+
+[dependencies.rfc5444]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "parse_tlv"
+path = "fuzz_targets/parse_tlv.rs"
+
+[[bin]]
+name = "parse_tlv_block"
+path = "fuzz_targets/parse_tlv_block.rs"
