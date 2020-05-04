@@ -1,7 +1,8 @@
 //! # `rust-rfc5444`
 //!
 //! <p align="center">
-//!   <a href="">
+//!   <a href="https://tools.ietf.org/html/rfc5444">
+//!     Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format
 //!   </a>
 //!   <br>
 //!   RFC 5444
@@ -56,8 +57,14 @@ impl<'a> Buf<'a> {
         Ok(())
     }
 
+    /// Is End-of-File?
     pub fn is_eof(&self) -> bool {
         self.off >= self.buf.len()
+    }
+
+    /// Current position in the buffer
+    pub fn pos(&self) -> usize {
+        self.off
     }
 
     /// Retrieve an `u8` from the buffer.
@@ -94,6 +101,108 @@ impl<'a> Buf<'a> {
 /// Supported version of RFC 5444.
 const RFC5444_VERSION: u8 = 0;
 
+/// Packet
+pub struct Packet<'a> {
+    /// Packet header
+    pub hdr: PktHeader<'a>,
+    /// Messages
+    pub messages: MessageIterator<'a>,
+}
+
+/// Iterator over messages
+pub struct MessageIterator<'a> {
+    buf: Buf<'a>,
+}
+
+impl<'a> Iterator for MessageIterator<'a> {
+    type Item = Result<Message<'a>, Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.buf.is_eof() {
+            return None;
+        }
+
+        match parser::message(&mut self.buf) {
+            Ok(a) => Some(Ok(a)),
+            Err(e) => Some(Err(e)),
+        }
+    }
+}
+
+/// Iterator over a TLV block
+pub struct AddressTlvIterator<'a> {
+    address_length: usize,
+    /// `(<address-block><tlb-block>)*` buffer
+    buf: Buf<'a>,
+}
+
+impl<'a> Iterator for AddressTlvIterator<'a> {
+    type Item = Result<(AddressBlock<'a>, TlvBlockIterator<'a>), Error>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.buf.is_eof() {
+            return None;
+        }
+
+        let address_block = parser::address_block(&mut self.buf,
+                                                  self.address_length);
+        let address_block = match address_block {
+            Ok(a) => a,
+            Err(e) => return Some(Err(e)),
+        };
+
+        let tlv_block = parser::tlv_block(&mut self.buf);
+        let tlv_block = match tlv_block {
+            Ok(t) => t,
+            Err(e) => return Some(Err(e)),
+        };
+
+        Some(Ok((address_block, tlv_block)))
+    }
+}
+
+/// Message.
+pub struct Message<'a> {
+    /// Message header.
+    pub hdr: MsgHeader<'a>,
+    /// TLV block
+    pub tlv_block: TlvBlockIterator<'a>,
+    /// Address block/TLV block iterator
+    pub address_tlv: AddressTlvIterator<'a>,
+}
+
+/// Message header.
+pub struct MsgHeader<'a> {
+    /// Message type.
+    pub r#type: u8,
+    /// Adress size in bytes.
+    pub address_length: usize,
+    /// Total size in bytes of the `<message>` including `<msg-header>`
+    size: usize,
+    /// Originator address.
+    pub orig_addr: Option<&'a [u8]>,
+    /// Hop limit.
+    pub hop_limit: Option<u8>,
+    /// Hop count.
+    pub hop_count: Option<u8>,
+    /// Sequence number.
+    pub seq_num: Option<u16>,
+}
+
+bitflags! {
+    /// Message header flags.
+    struct MsgHeaderFlags: u8 {
+        const HAS_ORIG      = 0x80;
+        const HAS_HOP_LIMIT = 0x40;
+        const HAS_HOP_COUNT = 0x20;
+        const HAS_SEQ_NUM   = 0x10;
+        const RESERVED0     = 0x08;
+        const RESERVED1     = 0x02;
+        const RESERVED2     = 0x01;
+    }
+}
+
+/// Packet header.
 pub struct PktHeader<'a> {
     /// RFC 5444 version
     pub version: u8,
@@ -116,6 +225,7 @@ bitflags! {
     }
 }
 
+/// Address block
 #[derive(Debug)]
 pub struct AddressBlock<'a> {
     /// Address count.

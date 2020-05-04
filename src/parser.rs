@@ -1,8 +1,14 @@
 use crate::{
     AddressBlock,
     AddressBlockFlags,
+    AddressTlvIterator,
     Buf,
     Error,
+    Message,
+    MessageIterator,
+    MsgHeader,
+    MsgHeaderFlags,
+    Packet,
     PktHeader,
     PktHeaderFlags,
     RFC5444_VERSION,
@@ -10,6 +16,100 @@ use crate::{
     TlvBlockIterator,
     TlvFlags,
 };
+
+pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
+    let mut buf = Buf::new(buf);
+
+    let hdr = pkt_header(&mut buf)?;
+
+    let messages = MessageIterator {
+        buf,
+    };
+
+    Ok(Packet {
+        hdr,
+        messages,
+    })
+}
+
+pub fn message<'a>(buf: &mut Buf<'a>) -> Result<Message<'a>, Error> {
+    let initial_offset = buf.pos();
+
+    let hdr = msg_header(buf)?;
+    let msg_tlv_block = tlv_block(buf)?;
+
+    let count = buf.pos() - initial_offset;
+    let restant_bytes = hdr.size - count;
+
+    let address_tlv = AddressTlvIterator {
+        address_length: hdr.address_length,
+        buf: Buf::new(buf.get_bytes(restant_bytes)?),
+    };
+
+    Ok(Message {
+        hdr,
+        tlv_block: msg_tlv_block,
+        address_tlv,
+    })
+}
+
+pub fn msg_header<'a>(buf: &mut Buf<'a>) -> Result<MsgHeader<'a>, Error> {
+    // Parse <msg-type>
+    let r#type = buf.get_u8()?;
+
+    // Parse <msg-flags> <msg-addr-length>
+    let (flags, address_length) = buf.get_u8().map(|b| {
+        // TODO: verify these flags and masks
+        let flags = MsgHeaderFlags::from_bits(b & 0xf0).unwrap();
+        let len = usize::from(b & 0x0f) + 1;
+        (flags, len)
+    })?;
+
+    // Parse <msg-size>
+    let size = buf.get_ne_u16().map(usize::from)?;
+
+    // Parse <msg-orig-addr>
+    let has_orig = flags.contains(MsgHeaderFlags::HAS_ORIG);
+
+    let mut orig_addr = None;
+    if has_orig {
+        orig_addr = Some(buf.get_bytes(address_length)?);
+    }
+
+    // Parse <msg-hop-limit>
+    let has_hop_limit = flags.contains(MsgHeaderFlags::HAS_HOP_LIMIT);
+
+    let mut hop_limit = None;
+    if has_hop_limit {
+        hop_limit = Some(buf.get_u8()?);
+    }
+
+    // Parse <msg-hop-count>
+    let has_hop_count = flags.contains(MsgHeaderFlags::HAS_HOP_COUNT);
+
+    let mut hop_count = None;
+    if has_hop_count {
+        hop_count = Some(buf.get_u8()?);
+    }
+
+    // Parse <msg-seq-num>
+    let has_seq_num = flags.contains(MsgHeaderFlags::HAS_SEQ_NUM);
+
+    let mut seq_num = None;
+    if has_seq_num {
+        seq_num = Some(buf.get_ne_u16()?);
+    }
+
+    Ok(MsgHeader {
+        r#type,
+        address_length,
+        size,
+        orig_addr,
+        hop_limit,
+        hop_count,
+        seq_num,
+    })
+}
 
 pub fn pkt_header<'a>(buf: &mut Buf<'a>) -> Result<PktHeader<'a>, Error> {
     // Parse <version> and <pkt-flags>
