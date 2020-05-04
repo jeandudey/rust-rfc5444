@@ -26,7 +26,7 @@ macro_rules! make_slice {
         let buf = &$buf[$start..];
         let buf = &buf[..$end];
         buf
-    }}
+    }};
 }
 
 /// Parser buffer.
@@ -41,10 +41,7 @@ impl<'a> Buf<'a> {
     /// Create a new `Buf`
     #[inline(always)]
     pub fn new(buf: &'a [u8]) -> Buf<'a> {
-        Buf {
-            buf,
-            off: 0,
-        }
+        Buf { buf, off: 0 }
     }
 
     /// Check if we have sufficient bytes available to read. Returns an error
@@ -144,8 +141,7 @@ impl<'a> Iterator for AddressTlvIterator<'a> {
             return None;
         }
 
-        let address_block = parser::address_block(&mut self.buf,
-                                                  self.address_length);
+        let address_block = parser::address_block(&mut self.buf, self.address_length);
         let address_block = match address_block {
             Ok(a) => a,
             Err(e) => return Some(Err(e)),
@@ -270,7 +266,7 @@ impl<'a> Iterator for TlvBlockIterator<'a> {
         match parser::tlv(&mut self.buf) {
             Ok(tlv) => {
                 return Some(Ok(tlv));
-            },
+            }
             Err(e) => Some(Err(e)),
         }
     }
