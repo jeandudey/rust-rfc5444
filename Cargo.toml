@@ -2,11 +2,22 @@
 name = "rfc5444"
 version = "0.1.0"
 authors = ["Jean Pierre Dudey <me@jeandudey.tech>"]
-edition = "2018"
 license = "MIT/Apache-2.0"
-description = "Implementation of the RFC 5444 standard"
+keywords = ["routing", "rfc5444"]
+readme = "README.md"
+repository = "https://github.com/jeandudey/rust-rfc5444"
 documentation = "https://docs.rs/rfc5444"
 homepage = "https://github.com/jeandudey/rust-rfc5444"
+categories = ["no-std"]
+description = """
+A library that can read/write messages of the RFC 5444 standard
+"""
+exclude = [".travis.yml"]
+# TODO: support old compilers
+edition = "2018"
+
+[badges]
+travis-ci = { repository = "jeandudey/rust-rfc5444" }
 
 [dependencies]
 bitflags = "1"
