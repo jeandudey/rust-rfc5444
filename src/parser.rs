@@ -1,6 +1,6 @@
 use crate::{
-    AddressBlock, AddressBlockFlags, AddressTlvIterator, Buf, Error, Message, MessageIterator,
-    MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags, Tlv, TlvBlockIterator, TlvFlags,
+    AddressBlock, AddressBlockFlags, AddressTlvIter, Buf, Error, Message, MessageIter,
+    MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags, Tlv, TlvBlockIter, TlvFlags,
     RFC5444_VERSION,
 };
 
@@ -9,7 +9,7 @@ pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
 
     let hdr = pkt_header(&mut buf)?;
 
-    let messages = MessageIterator { buf };
+    let messages = MessageIter { buf };
 
     Ok(Packet { hdr, messages })
 }
@@ -18,12 +18,12 @@ pub fn message<'a>(buf: &mut Buf<'a>) -> Result<Message<'a>, Error> {
     let initial_offset = buf.pos();
 
     let hdr = msg_header(buf)?;
-    let msg_tlv_block = tlv_block(buf)?;
+    let msg_tlv_block = tlv_block_iter(buf)?;
 
     let count = buf.pos() - initial_offset;
     let restant_bytes = hdr.size - count;
 
-    let address_tlv = AddressTlvIterator {
+    let address_tlv = AddressTlvIter {
         address_length: hdr.address_length,
         buf: Buf::new(buf.get_bytes(restant_bytes)?),
     };
@@ -119,7 +119,7 @@ pub fn pkt_header<'a>(buf: &mut Buf<'a>) -> Result<PktHeader<'a>, Error> {
 
     let mut block = None;
     if has_tlv {
-        block = Some(tlv_block(buf)?);
+        block = Some(tlv_block_iter(buf)?);
     }
 
     Ok(PktHeader {
@@ -137,11 +137,15 @@ pub fn address_block<'a>(
     let num_addr = buf.get_u8().map(usize::from)?;
     let addr_flags = AddressBlockFlags::from_bits(buf.get_u8()?).unwrap();
 
+    println!("num_addr = {:?}", num_addr);
+    println!("addr_flags = {:?}", addr_flags);
+
     let mut head_length = 0;
     let mut head = None;
     let has_head = addr_flags.contains(AddressBlockFlags::HAS_HEAD);
     if has_head {
         head_length = buf.get_u8().map(usize::from)?;
+        println!("head_length = {:?}", head_length);
         head = Some(buf.get_bytes(head_length)?);
     }
 
@@ -211,11 +215,11 @@ pub fn address_block<'a>(
 }
 
 /// Parse a <tlv-block>
-pub fn tlv_block<'a>(buf: &mut Buf<'a>) -> Result<TlvBlockIterator<'a>, Error> {
+pub fn tlv_block_iter<'a>(buf: &mut Buf<'a>) -> Result<TlvBlockIter<'a>, Error> {
     let length = buf.get_ne_u16().map(usize::from)?;
     let block = buf.get_bytes(length).map(Buf::new)?;
 
-    Ok(TlvBlockIterator { buf: block })
+    Ok(TlvBlockIter { buf: block })
 }
 
 /// Parse a `<tlv>`

@@ -30,6 +30,7 @@ macro_rules! make_slice {
 }
 
 /// Parser buffer.
+#[derive(Debug)]
 pub struct Buf<'a> {
     /// Internal buffer.
     buf: &'a [u8],
@@ -99,19 +100,21 @@ impl<'a> Buf<'a> {
 const RFC5444_VERSION: u8 = 0;
 
 /// Packet
+#[derive(Debug)]
 pub struct Packet<'a> {
     /// Packet header
     pub hdr: PktHeader<'a>,
     /// Messages
-    pub messages: MessageIterator<'a>,
+    pub messages: MessageIter<'a>,
 }
 
 /// Iterator over messages
-pub struct MessageIterator<'a> {
+#[derive(Debug)]
+pub struct MessageIter<'a> {
     buf: Buf<'a>,
 }
 
-impl<'a> Iterator for MessageIterator<'a> {
+impl<'a> Iterator for MessageIter<'a> {
     type Item = Result<Message<'a>, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -127,14 +130,15 @@ impl<'a> Iterator for MessageIterator<'a> {
 }
 
 /// Iterator over a TLV block
-pub struct AddressTlvIterator<'a> {
+#[derive(Debug)]
+pub struct AddressTlvIter<'a> {
     address_length: usize,
     /// `(<address-block><tlb-block>)*` buffer
     buf: Buf<'a>,
 }
 
-impl<'a> Iterator for AddressTlvIterator<'a> {
-    type Item = Result<(AddressBlock<'a>, TlvBlockIterator<'a>), Error>;
+impl<'a> Iterator for AddressTlvIter<'a> {
+    type Item = Result<(AddressBlock<'a>, TlvBlockIter<'a>), Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.buf.is_eof() {
@@ -147,7 +151,7 @@ impl<'a> Iterator for AddressTlvIterator<'a> {
             Err(e) => return Some(Err(e)),
         };
 
-        let tlv_block = parser::tlv_block(&mut self.buf);
+        let tlv_block = parser::tlv_block_iter(&mut self.buf);
         let tlv_block = match tlv_block {
             Ok(t) => t,
             Err(e) => return Some(Err(e)),
@@ -158,16 +162,18 @@ impl<'a> Iterator for AddressTlvIterator<'a> {
 }
 
 /// Message.
+#[derive(Debug)]
 pub struct Message<'a> {
     /// Message header.
     pub hdr: MsgHeader<'a>,
     /// TLV block
-    pub tlv_block: TlvBlockIterator<'a>,
+    pub tlv_block: TlvBlockIter<'a>,
     /// Address block/TLV block iterator
-    pub address_tlv: AddressTlvIterator<'a>,
+    pub address_tlv: AddressTlvIter<'a>,
 }
 
 /// Message header.
+#[derive(Debug)]
 pub struct MsgHeader<'a> {
     /// Message type.
     pub r#type: u8,
@@ -199,13 +205,14 @@ bitflags! {
 }
 
 /// Packet header.
+#[derive(Debug)]
 pub struct PktHeader<'a> {
     /// RFC 5444 version
     pub version: u8,
     /// Sequence number
     pub seq_num: Option<u16>,
     /// TLV block
-    pub tlv_block: Option<TlvBlockIterator<'a>>,
+    pub tlv_block: Option<TlvBlockIter<'a>>,
 }
 
 bitflags! {
@@ -250,12 +257,13 @@ bitflags! {
 }
 
 /// Iterator over a TLV block
-pub struct TlvBlockIterator<'a> {
+#[derive(Debug)]
+pub struct TlvBlockIter<'a> {
     /// Tlv block buffer
     buf: Buf<'a>,
 }
 
-impl<'a> Iterator for TlvBlockIterator<'a> {
+impl<'a> Iterator for TlvBlockIter<'a> {
     type Item = Result<Tlv<'a>, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -273,6 +281,7 @@ impl<'a> Iterator for TlvBlockIterator<'a> {
 }
 
 /// A type-length-value
+#[derive(Debug)]
 pub struct Tlv<'a> {
     /// Type
     pub r#type: u8,
