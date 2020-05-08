@@ -1,7 +1,7 @@
 use crate::{
-    AddressBlock, AddressBlockFlags, AddressTlvIter, Buf, Error, Message, MessageIter,
-    MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags, Tlv, TlvBlockIter, TlvFlags,
-    RFC5444_VERSION,
+    AddressBlock, AddressBlockFlags, AddressTlvIter, Buf, Error, Message,
+    MessageIter, MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags,
+    Tlv, TlvBlockIter, TlvFlags, RFC5444_VERSION,
 };
 
 pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
@@ -179,8 +179,10 @@ pub fn address_block<'a>(
     }
 
     // Parse <prefix-length>*
-    let has_single_prelen = addr_flags.contains(AddressBlockFlags::HAS_SINGLE_PRELEN);
-    let has_multi_prelen = addr_flags.contains(AddressBlockFlags::HAS_MULTI_PRELEN);
+    let has_single_prelen =
+        addr_flags.contains(AddressBlockFlags::HAS_SINGLE_PRELEN);
+    let has_multi_prelen =
+        addr_flags.contains(AddressBlockFlags::HAS_MULTI_PRELEN);
     let mut prefix_length_fields = 0;
     match (has_single_prelen, has_multi_prelen) {
         // no fields
@@ -215,7 +217,9 @@ pub fn address_block<'a>(
 }
 
 /// Parse a <tlv-block>
-pub fn tlv_block_iter<'a>(buf: &mut Buf<'a>) -> Result<TlvBlockIter<'a>, Error> {
+pub fn tlv_block_iter<'a>(
+    buf: &mut Buf<'a>,
+) -> Result<TlvBlockIter<'a>, Error> {
     let length = buf.get_ne_u16().map(usize::from)?;
     let block = buf.get_bytes(length).map(Buf::new)?;
 

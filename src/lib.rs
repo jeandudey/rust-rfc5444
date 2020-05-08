@@ -145,7 +145,8 @@ impl<'a> Iterator for AddressTlvIter<'a> {
             return None;
         }
 
-        let address_block = parser::address_block(&mut self.buf, self.address_length);
+        let address_block =
+            parser::address_block(&mut self.buf, self.address_length);
         let address_block = match address_block {
             Ok(a) => a,
             Err(e) => return Some(Err(e)),
