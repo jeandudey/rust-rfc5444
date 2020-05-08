@@ -137,15 +137,11 @@ pub fn address_block<'a>(
     let num_addr = buf.get_u8().map(usize::from)?;
     let addr_flags = AddressBlockFlags::from_bits(buf.get_u8()?).unwrap();
 
-    println!("num_addr = {:?}", num_addr);
-    println!("addr_flags = {:?}", addr_flags);
-
     let mut head_length = 0;
     let mut head = None;
     let has_head = addr_flags.contains(AddressBlockFlags::HAS_HEAD);
     if has_head {
         head_length = buf.get_u8().map(usize::from)?;
-        println!("head_length = {:?}", head_length);
         head = Some(buf.get_bytes(head_length)?);
     }
 

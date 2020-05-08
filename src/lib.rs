@@ -8,6 +8,8 @@
 //!   RFC 5444
 //! </p>
 
+#![no_std]
+
 #[macro_use]
 extern crate bitflags;
 
