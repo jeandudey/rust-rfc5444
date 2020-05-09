@@ -19,6 +19,11 @@ Contributions are welcome, the rule is to write good and tested code (applies
 to me too :roll_eyes:), without dependencies on external crates, do convince me
 of reducing dependencies.
 
+# Features
+
+- `use_std`: (default) enables usage of the `std` crate, disable it to be
+`no_std`.
+
 # [Documentation](https://docs.rs/rfc5444)
 
 # Minimum Supported Rust Version (MSRV)

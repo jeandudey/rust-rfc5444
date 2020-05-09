@@ -8,7 +8,7 @@
 //!   RFC 5444
 //! </p>
 
-#![no_std]
+#![cfg_attr(not(feature = "use_std"), no_std)]
 
 #[macro_use]
 extern crate bitflags;
