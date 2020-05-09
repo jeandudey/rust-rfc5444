@@ -43,7 +43,7 @@ const RESULT: &[u8] = &[
 ];
 
 #[test]
-fn parse() {
+fn test_parse_nhdp() {
     let mut pkt = rfc5444::parser::packet(RESULT).unwrap();
 
     assert_eq!(pkt.hdr.version, 0);
