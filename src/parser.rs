@@ -1,5 +1,6 @@
+use crate::buf::Buf;
 use crate::{
-    AddressBlock, AddressBlockFlags, AddressTlvIter, Buf, Error, Message,
+    AddressBlock, AddressBlockFlags, AddressTlvIter, Error, Message,
     MessageIter, MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags,
     Tlv, TlvBlockIter, TlvFlags, RFC5444_VERSION,
 };
