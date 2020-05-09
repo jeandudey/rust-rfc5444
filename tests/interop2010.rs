@@ -248,9 +248,9 @@ fn test_interop2010_10() {
 #[test]
 fn test_interop2010_11() {
     const BIN: &[u8] = &[
-    0x0c, 0x00, 0x0b, 0x00, 0x02, 0x01, 0x00, 0x01, 0x03, 0x00, 0x06, 0x00,
-    0x00, 0x02, 0xe3, 0x00, 0x0c, 0x0a, 0x00, 0x00, 0x01, 0xff, 0x01, 0x00,
-    0x00
+        0x0c, 0x00, 0x0b, 0x00, 0x02, 0x01, 0x00, 0x01, 0x03, 0x00, 0x06, 0x00,
+        0x00, 0x02, 0xe3, 0x00, 0x0c, 0x0a, 0x00, 0x00, 0x01, 0xff, 0x01, 0x00,
+        0x00,
     ];
     const ORIGINATOR: &[u8] = &[10, 0, 0, 1];
     let pkt = rfc5444::read_packet(BIN).unwrap();
@@ -270,4 +270,32 @@ fn test_interop2010_11() {
     assert_eq!(msg02.hdr.orig_addr, Some(ORIGINATOR));
     assert_eq!(msg02.hdr.hop_count, Some(1));
     assert_eq!(msg02.hdr.hop_limit, Some(255));
+}
+
+#[test]
+fn test_interop2010_12() {
+    const BIN: &[u8] = &[
+        0x0c, 0x00, 0x0c, 0x00, 0x02, 0x01, 0x00, 0x01, 0x03, 0x00, 0x06, 0x00,
+        0x00, 0x02, 0xf3, 0x00, 0x0e, 0x0a, 0x00, 0x00, 0x01, 0xff, 0x01, 0x30,
+        0x39, 0x00, 0x00,
+    ];
+    const ORIGINATOR: &[u8] = &[10, 0, 0, 1];
+    let pkt = rfc5444::read_packet(BIN).unwrap();
+    assert_eq!(pkt.hdr.version, 0);
+    assert_eq!(pkt.hdr.seq_num, Some(12));
+    assert!(pkt.hdr.tlv_block.is_some());
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
+    let tlv01 = tlvs.next().unwrap().unwrap();
+    assert_eq!(tlv01.r#type, 1);
+    let mut msgs = pkt.messages.iter();
+    let msg01 = msgs.next().unwrap().unwrap();
+    assert_eq!(msg01.hdr.r#type, 1);
+    assert_eq!(msg01.hdr.address_length, 4);
+    let msg02 = msgs.next().unwrap().unwrap();
+    assert_eq!(msg02.hdr.r#type, 2);
+    assert_eq!(msg02.hdr.address_length, 4);
+    assert_eq!(msg02.hdr.orig_addr, Some(ORIGINATOR));
+    assert_eq!(msg02.hdr.hop_count, Some(1));
+    assert_eq!(msg02.hdr.hop_limit, Some(255));
+    assert_eq!(msg02.hdr.seq_num, Some(12345));
 }
