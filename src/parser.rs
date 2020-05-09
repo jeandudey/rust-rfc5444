@@ -5,7 +5,8 @@ use crate::{
     TlvBlock, TlvFlags, RFC5444_VERSION,
 };
 
-pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
+/// Read an RFC 5444 packet
+pub fn read_packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
     let mut buf = Buf::new(buf);
 
     let hdr = pkt_header(&mut buf)?;
