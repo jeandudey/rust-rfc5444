@@ -85,3 +85,45 @@ impl<'a> Buf<'a> {
         Ok(b)
     }
 }
+
+#[cfg(test)]
+pub mod test {
+    use crate::buf::Buf;
+
+    const BUF: &[u8] = &[0xde, 0xad, 0xbe, 0xef, 0xba, 0xbe, 0xca, 0xfe];
+
+    #[test]
+    fn test_buf_get_bytes() {
+        let mut buf = Buf::new(BUF);
+        let bytes = buf.get_bytes(4).unwrap();
+        assert_eq!(bytes, &BUF[..4]);
+        assert_eq!(buf.pos(), 4);
+    }
+
+    #[test]
+    fn test_buf_get_ne_u16() {
+        let mut buf = Buf::new(BUF);
+        assert_eq!(buf.get_ne_u16().unwrap(), 0xdead);
+        assert_eq!(buf.pos(), 2);
+        assert_eq!(buf.get_ne_u16().unwrap(), 0xbeef);
+        assert_eq!(buf.pos(), 4);
+    }
+
+    #[test]
+    fn test_buf_get_u8() {
+        let mut buf = Buf::new(BUF);
+        for (i, c) in BUF.iter().enumerate() {
+            assert_eq!(i, buf.pos());
+            assert_eq!(*c, buf.get_u8().unwrap());
+        }
+    }
+
+    #[test]
+    fn test_buf_is_eof() {
+        let mut buf = Buf::new(BUF);
+        for _ in BUF {
+            buf.get_u8().unwrap();
+        }
+        assert!(buf.is_eof());
+    }
+}
