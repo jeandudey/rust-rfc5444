@@ -46,11 +46,13 @@ impl<'a> Buf<'a> {
     }
 
     /// Is End-of-File?
+    #[inline(always)]
     pub fn is_eof(&self) -> bool {
         self.off >= self.buf.len()
     }
 
     /// Current position in the buffer
+    #[inline(always)]
     pub fn pos(&self) -> usize {
         self.off
     }
