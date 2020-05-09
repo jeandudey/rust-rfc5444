@@ -1,8 +1,8 @@
 use crate::buf::Buf;
 use crate::{
-    AddressBlock, AddressBlockFlags, AddressTlvs, Error, Message,
-    Messages, MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags,
-    Tlv, TlvBlock, TlvFlags, RFC5444_VERSION,
+    AddressBlock, AddressBlockFlags, AddressTlvs, Error, Message, Messages,
+    MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags, Tlv,
+    TlvBlock, TlvFlags, RFC5444_VERSION,
 };
 
 pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
@@ -214,9 +214,7 @@ pub fn address_block<'a>(
 }
 
 /// Parse a <tlv-block>
-pub fn tlv_block<'a>(
-    buf: &mut Buf<'a>,
-) -> Result<TlvBlock<'a>, Error> {
+pub fn tlv_block<'a>(buf: &mut Buf<'a>) -> Result<TlvBlock<'a>, Error> {
     let length = buf.get_ne_u16().map(usize::from)?;
     let block = buf.get_bytes(length).map(Buf::new)?;
 

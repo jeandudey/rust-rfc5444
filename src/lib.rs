@@ -32,7 +32,9 @@ impl std::fmt::Display for Error {
         match *self {
             Error::UnexpectedEof => write!(f, "Unexpected EOF"),
             Error::PrefixTooLarge => write!(f, "Address prefix is too large"),
-            Error::InvalidVersion => write!(f, "Version is invalid, not supported"),
+            Error::InvalidVersion => {
+                write!(f, "Version is invalid, not supported")
+            }
         }
     }
 }
@@ -60,7 +62,9 @@ pub struct Messages<'a> {
 impl<'a> Messages<'a> {
     /// Iterator over each message
     pub fn iter(&self) -> MessageIter<'a> {
-        MessageIter { buf: self.buf.clone() }
+        MessageIter {
+            buf: self.buf.clone(),
+        }
     }
 }
 
@@ -239,7 +243,9 @@ pub struct TlvBlock<'a> {
 impl<'a> TlvBlock<'a> {
     /// Iterator over a TLV block entries
     pub fn iter(&self) -> TlvBlockIter<'a> {
-        TlvBlockIter { buf: self.buf.clone() }
+        TlvBlockIter {
+            buf: self.buf.clone(),
+        }
     }
 }
 
