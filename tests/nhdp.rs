@@ -44,13 +44,14 @@ const RESULT: &[u8] = &[
 
 #[test]
 fn test_parse_nhdp() {
-    let mut pkt = rfc5444::parser::packet(RESULT).unwrap();
+    let pkt = rfc5444::parser::packet(RESULT).unwrap();
 
     assert_eq!(pkt.hdr.version, 0);
     assert!(pkt.hdr.seq_num.is_none());
     assert!(pkt.hdr.tlv_block.is_none());
 
-    let mut msg = pkt.messages.next().unwrap().unwrap();
+    let mut msgs = pkt.messages.iter();
+    let msg = msgs.next().unwrap().unwrap();
     assert_eq!(msg.hdr.r#type, 1);
     assert_eq!(msg.hdr.address_length, 4);
     assert!(msg.hdr.orig_addr.is_none());
@@ -58,12 +59,12 @@ fn test_parse_nhdp() {
     assert!(msg.hdr.hop_count.is_none());
     assert!(msg.hdr.seq_num.is_none());
 
-    assert!(msg.tlv_block.next().is_none());
+    assert!(msg.tlv_block.iter().next().is_none());
 
     println!("pkt {:?}", pkt);
     println!("msg {:?}", msg.address_tlv);
 
-    for pair in msg.address_tlv {
+    for pair in msg.address_tlv.iter() {
         let _pair = pair.unwrap();
     }
 }

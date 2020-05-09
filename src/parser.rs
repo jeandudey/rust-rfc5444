@@ -1,8 +1,8 @@
 use crate::buf::Buf;
 use crate::{
-    AddressBlock, AddressBlockFlags, AddressTlvIter, Error, Message,
-    MessageIter, MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags,
-    Tlv, TlvBlockIter, TlvFlags, RFC5444_VERSION,
+    AddressBlock, AddressBlockFlags, AddressTlvs, Error, Message,
+    Messages, MsgHeader, MsgHeaderFlags, Packet, PktHeader, PktHeaderFlags,
+    Tlv, TlvBlock, TlvFlags, RFC5444_VERSION,
 };
 
 pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
@@ -10,7 +10,7 @@ pub fn packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
 
     let hdr = pkt_header(&mut buf)?;
 
-    let messages = MessageIter { buf };
+    let messages = Messages { buf };
 
     Ok(Packet { hdr, messages })
 }
@@ -19,12 +19,12 @@ pub fn message<'a>(buf: &mut Buf<'a>) -> Result<Message<'a>, Error> {
     let initial_offset = buf.pos();
 
     let hdr = msg_header(buf)?;
-    let msg_tlv_block = tlv_block_iter(buf)?;
+    let msg_tlv_block = tlv_block(buf)?;
 
     let count = buf.pos() - initial_offset;
     let restant_bytes = hdr.size - count;
 
-    let address_tlv = AddressTlvIter {
+    let address_tlv = AddressTlvs {
         address_length: hdr.address_length,
         buf: Buf::new(buf.get_bytes(restant_bytes)?),
     };
@@ -120,7 +120,7 @@ pub fn pkt_header<'a>(buf: &mut Buf<'a>) -> Result<PktHeader<'a>, Error> {
 
     let mut block = None;
     if has_tlv {
-        block = Some(tlv_block_iter(buf)?);
+        block = Some(tlv_block(buf)?);
     }
 
     Ok(PktHeader {
@@ -214,13 +214,13 @@ pub fn address_block<'a>(
 }
 
 /// Parse a <tlv-block>
-pub fn tlv_block_iter<'a>(
+pub fn tlv_block<'a>(
     buf: &mut Buf<'a>,
-) -> Result<TlvBlockIter<'a>, Error> {
+) -> Result<TlvBlock<'a>, Error> {
     let length = buf.get_ne_u16().map(usize::from)?;
     let block = buf.get_bytes(length).map(Buf::new)?;
 
-    Ok(TlvBlockIter { buf: block })
+    Ok(TlvBlock { buf: block })
 }
 
 /// Parse a `<tlv>`

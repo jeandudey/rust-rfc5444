@@ -65,7 +65,7 @@ fn test_04() {
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(4));
     assert!(pkt.hdr.tlv_block.is_some());
-    for tlv in pkt.hdr.tlv_block.unwrap() {
+    for tlv in pkt.hdr.tlv_block.unwrap().iter() {
         let tlv = tlv.unwrap();
         assert_eq!(tlv.r#type, 1);
     }
@@ -79,7 +79,7 @@ fn test_05() {
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(5));
     assert!(pkt.hdr.tlv_block.is_some());
-    let tlvs = &mut pkt.hdr.tlv_block.unwrap();
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
     let tlv01 = tlvs.next().unwrap().unwrap();
     assert_eq!(tlv01.r#type, 1);
     let tlv02 = tlvs.next().unwrap().unwrap();
@@ -98,7 +98,7 @@ fn test_06() {
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(6));
     assert!(pkt.hdr.tlv_block.is_some());
-    let tlvs = &mut pkt.hdr.tlv_block.unwrap();
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
     let tlv01 = tlvs.next().unwrap().unwrap();
     assert_eq!(tlv01.r#type, 1);
     let tlv02 = tlvs.next().unwrap().unwrap();
@@ -168,7 +168,7 @@ fn test_07() {
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(7));
     assert!(pkt.hdr.tlv_block.is_some());
-    let tlvs = &mut pkt.hdr.tlv_block.unwrap();
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
     let tlv01 = tlvs.next().unwrap().unwrap();
     assert_eq!(tlv01.r#type, 1);
     let tlv02 = tlvs.next().unwrap().unwrap();
@@ -183,14 +183,14 @@ fn test_08() {
         0x0c, 0x00, 0x08, 0x00, 0x02, 0x01, 0x00, 0x01, 0x03, 0x00, 0x06, 0x00,
         0x00,
     ];
-    let mut pkt = rfc5444::parser::packet(BIN).unwrap();
+    let pkt = rfc5444::parser::packet(BIN).unwrap();
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(8));
     assert!(pkt.hdr.tlv_block.is_some());
-    let tlvs = &mut pkt.hdr.tlv_block.unwrap();
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
     let tlv01 = tlvs.next().unwrap().unwrap();
     assert_eq!(tlv01.r#type, 1);
-    let msgs = &mut pkt.messages;
+    let mut msgs = pkt.messages.iter();
     let msg01 = msgs.next().unwrap().unwrap();
     assert_eq!(msg01.hdr.r#type, 1);
     assert_eq!(msg01.hdr.address_length, 4);
@@ -203,14 +203,14 @@ fn test_09() {
         0x00, 0x02, 0x83, 0x00, 0x0a, 0x0a, 0x00, 0x00, 0x01, 0x00, 0x00,
     ];
     const ORIGINATOR: &[u8] = &[10, 0, 0, 1];
-    let mut pkt = rfc5444::parser::packet(BIN).unwrap();
+    let pkt = rfc5444::parser::packet(BIN).unwrap();
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(9));
     assert!(pkt.hdr.tlv_block.is_some());
-    let tlvs = &mut pkt.hdr.tlv_block.unwrap();
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
     let tlv01 = tlvs.next().unwrap().unwrap();
     assert_eq!(tlv01.r#type, 1);
-    let msgs = &mut pkt.messages;
+    let mut msgs = pkt.messages.iter();
     let msg01 = msgs.next().unwrap().unwrap();
     assert_eq!(msg01.hdr.r#type, 1);
     assert_eq!(msg01.hdr.address_length, 4);
@@ -227,14 +227,14 @@ fn test_10() {
         0x00, 0x02, 0xa3, 0x00, 0x0b, 0x0a, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00,
     ];
     const ORIGINATOR: &[u8] = &[10, 0, 0, 1];
-    let mut pkt = rfc5444::parser::packet(BIN).unwrap();
+    let pkt = rfc5444::parser::packet(BIN).unwrap();
     assert_eq!(pkt.hdr.version, 0);
     assert_eq!(pkt.hdr.seq_num, Some(10));
     assert!(pkt.hdr.tlv_block.is_some());
-    let tlvs = &mut pkt.hdr.tlv_block.unwrap();
+    let mut tlvs = pkt.hdr.tlv_block.unwrap().iter();
     let tlv01 = tlvs.next().unwrap().unwrap();
     assert_eq!(tlv01.r#type, 1);
-    let msgs = &mut pkt.messages;
+    let mut msgs = pkt.messages.iter();
     let msg01 = msgs.next().unwrap().unwrap();
     assert_eq!(msg01.hdr.r#type, 1);
     assert_eq!(msg01.hdr.address_length, 4);

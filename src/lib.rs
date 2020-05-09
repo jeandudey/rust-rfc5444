@@ -49,7 +49,19 @@ pub struct Packet<'a> {
     /// Packet header
     pub hdr: PktHeader<'a>,
     /// Messages
-    pub messages: MessageIter<'a>,
+    pub messages: Messages<'a>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Messages<'a> {
+    buf: Buf<'a>,
+}
+
+impl<'a> Messages<'a> {
+    /// Iterator over each message
+    pub fn iter(&self) -> MessageIter<'a> {
+        MessageIter { buf: self.buf.clone() }
+    }
 }
 
 /// Iterator over messages
@@ -73,6 +85,23 @@ impl<'a> Iterator for MessageIter<'a> {
     }
 }
 
+/// Address-TLVs
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct AddressTlvs<'a> {
+    address_length: usize,
+    buf: Buf<'a>,
+}
+
+impl<'a> AddressTlvs<'a> {
+    /// Iterator over Address-TLVs
+    pub fn iter(&self) -> AddressTlvIter<'a> {
+        AddressTlvIter {
+            address_length: self.address_length,
+            buf: self.buf.clone(),
+        }
+    }
+}
+
 /// Iterator over a TLV block
 #[derive(Debug)]
 pub struct AddressTlvIter<'a> {
@@ -82,7 +111,7 @@ pub struct AddressTlvIter<'a> {
 }
 
 impl<'a> Iterator for AddressTlvIter<'a> {
-    type Item = Result<(AddressBlock<'a>, TlvBlockIter<'a>), Error>;
+    type Item = Result<(AddressBlock<'a>, TlvBlock<'a>), Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.buf.is_eof() {
@@ -96,7 +125,7 @@ impl<'a> Iterator for AddressTlvIter<'a> {
             Err(e) => return Some(Err(e)),
         };
 
-        let tlv_block = parser::tlv_block_iter(&mut self.buf);
+        let tlv_block = parser::tlv_block(&mut self.buf);
         let tlv_block = match tlv_block {
             Ok(t) => t,
             Err(e) => return Some(Err(e)),
@@ -112,9 +141,9 @@ pub struct Message<'a> {
     /// Message header.
     pub hdr: MsgHeader<'a>,
     /// TLV block
-    pub tlv_block: TlvBlockIter<'a>,
+    pub tlv_block: TlvBlock<'a>,
     /// Address block/TLV block iterator
-    pub address_tlv: AddressTlvIter<'a>,
+    pub address_tlv: AddressTlvs<'a>,
 }
 
 /// Message header.
@@ -157,7 +186,7 @@ pub struct PktHeader<'a> {
     /// Sequence number
     pub seq_num: Option<u16>,
     /// TLV block
-    pub tlv_block: Option<TlvBlockIter<'a>>,
+    pub tlv_block: Option<TlvBlock<'a>>,
 }
 
 bitflags! {
@@ -201,8 +230,21 @@ bitflags! {
     }
 }
 
+/// TLV block
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct TlvBlock<'a> {
+    buf: Buf<'a>,
+}
+
+impl<'a> TlvBlock<'a> {
+    /// Iterator over a TLV block entries
+    pub fn iter(&self) -> TlvBlockIter<'a> {
+        TlvBlockIter { buf: self.buf.clone() }
+    }
+}
+
 /// Iterator over a TLV block
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TlvBlockIter<'a> {
     /// Tlv block buffer
     buf: Buf<'a>,

@@ -20,7 +20,7 @@ fn test_make_slice() {
 }
 
 /// Parser buffer.
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Buf<'a> {
     /// Internal buffer.
     buf: &'a [u8],
