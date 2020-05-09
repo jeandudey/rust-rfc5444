@@ -115,7 +115,7 @@ pub fn pkt_header<'a>(buf: &mut Buf<'a>) -> Result<PktHeader<'a>, Error> {
     }
 
     // Parse <tlv-block>?
-    let has_tlv = flags.contains(PktHeaderFlags::HAS_SEQ_NUM);
+    let has_tlv = flags.contains(PktHeaderFlags::HAS_TLV);
 
     let mut block = None;
     if has_tlv {
