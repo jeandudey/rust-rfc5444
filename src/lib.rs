@@ -26,6 +26,20 @@ pub enum Error {
     InvalidVersion,
 }
 
+#[cfg(feature = "use_std")]
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        match *self {
+            Error::UnexpectedEof => write!(f, "Unexpected EOF"),
+            Error::PrefixTooLarge => write!(f, "Address prefix is too large"),
+            Error::InvalidVersion => write!(f, "Version is invalid, not supported"),
+        }
+    }
+}
+
+#[cfg(feature = "use_std")]
+impl std::error::Error for Error {}
+
 /// Supported version of RFC 5444.
 pub const RFC5444_VERSION: u8 = 0;
 
