@@ -1,11 +1,22 @@
 use crate::Error;
 
 macro_rules! make_slice {
-    ($buf:expr, $start:expr, $end:expr) => {{
-        let buf = &$buf[$start..];
-        let buf = &buf[..$end];
+    ($buf:expr, $off:expr, $count:expr) => {{
+        let buf = &$buf[$off..];
+        let buf = &buf[..$count];
         buf
     }};
+}
+
+#[test]
+fn test_make_slice() {
+    const BUF: &[u8] = &[0xde, 0xad, 0xbe, 0xef, 0xba, 0xbe, 0xca, 0xfe];
+    let s0 = make_slice!(BUF, 1, 2);
+    let s1 = make_slice!(BUF, 3, 2);
+    let s2 = make_slice!(BUF, 5, 2);
+    assert_eq!(s0, &[0xad, 0xbe]);
+    assert_eq!(s1, &[0xef, 0xba]);
+    assert_eq!(s2, &[0xbe, 0xca]);
 }
 
 /// Parser buffer.
