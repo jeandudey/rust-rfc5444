@@ -33,7 +33,7 @@ fn test_make_slice() {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Buf<'a> {
     /// Internal buffer.
-    buf: &'a [u8],
+    pub(crate) buf: &'a [u8],
     /// Current offset.
     off: usize,
 }
