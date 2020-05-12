@@ -1,0 +1,26 @@
+language = "C"
+include_version = true
+header = """
+/*
+ * Copyright 2020 Jean Pierre Dudey. See the LICENSE-MIT and
+ * LICENSE-APACHE files at the top-level directory of this
+ * distribution.
+ *
+ * Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+ * http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+ * <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+ * option. This file may not be copied, modified, or distributed
+ * except according to those terms.
+ */
+"""
+include_guard = "RUST_RFC5444_H"
+
+braces = "SameLine"
+pragma_once = false
+no_includes = true
+sys_includes = ["stdint.h", "stdlib.h", "stdbool.h"]
+cpp_compat = true
+line_length = 80
+tab_width = 4
+documentation_style = "doxy"
+style = "type"

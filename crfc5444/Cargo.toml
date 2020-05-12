@@ -1,5 +1,5 @@
 [package]
-name = "rfc5444"
+name = "crfc5444"
 version = "0.1.0"
 authors = ["Jean Pierre Dudey <me@jeandudey.tech>"]
 license = "MIT/Apache-2.0"
@@ -12,19 +12,13 @@ categories = ["no-std"]
 description = """
 A library that can read/write messages of the RFC 5444 standard
 """
-exclude = [".travis.yml"]
 # TODO: support old compilers
 edition = "2018"
-
-[workspace]
-members = ["crfc5444"]
-
-[badges]
-travis-ci = { repository = "jeandudey/rust-rfc5444" }
+build = "build.rs"
 
 [dependencies]
-bitflags = "1"
+libc = "0.2"
+rfc5444 = { version = "0.1", path = "../" }
 
-[features]
-default = ["use_std"]
-use_std = []
+[build-dependencies]
+cbindgen = "0.14"
