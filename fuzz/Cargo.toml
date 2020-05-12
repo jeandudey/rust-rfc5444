@@ -19,3 +19,6 @@ path = ".."
 [workspace]
 members = ["."]
 
+[[bin]]
+name = "parse_packet"
+path = "fuzz_targets/parse_packet.rs"
