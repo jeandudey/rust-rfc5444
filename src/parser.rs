@@ -65,34 +65,38 @@ pub fn msg_header<'a>(buf: &mut Buf<'a>) -> Result<MsgHeader<'a>, Error> {
     // Parse <msg-orig-addr>
     let has_orig = flags.contains(MsgHeaderFlags::HAS_ORIG);
 
-    let mut orig_addr = None;
-    if has_orig {
-        orig_addr = Some(buf.get_bytes(address_length)?);
-    }
+    let orig_addr = if has_orig {
+        Some(buf.get_bytes(address_length)?)
+    } else {
+        None
+    };
 
     // Parse <msg-hop-limit>
     let has_hop_limit = flags.contains(MsgHeaderFlags::HAS_HOP_LIMIT);
 
-    let mut hop_limit = None;
-    if has_hop_limit {
-        hop_limit = Some(buf.get_u8()?);
-    }
+    let hop_limit = if has_hop_limit {
+        Some(buf.get_u8()?)
+    } else {
+        None
+    };
 
     // Parse <msg-hop-count>
     let has_hop_count = flags.contains(MsgHeaderFlags::HAS_HOP_COUNT);
 
-    let mut hop_count = None;
-    if has_hop_count {
-        hop_count = Some(buf.get_u8()?);
-    }
+    let hop_count = if has_hop_count {
+        Some(buf.get_u8()?)
+    } else {
+        None
+    };
 
     // Parse <msg-seq-num>
     let has_seq_num = flags.contains(MsgHeaderFlags::HAS_SEQ_NUM);
 
-    let mut seq_num = None;
-    if has_seq_num {
-        seq_num = Some(buf.get_ne_u16()?);
-    }
+    let seq_num = if has_seq_num {
+        Some(buf.get_ne_u16()?)
+    } else {
+        None
+    };
 
     Ok(MsgHeader {
         r#type,
@@ -121,18 +125,16 @@ pub fn pkt_header<'a>(buf: &mut Buf<'a>) -> Result<PktHeader<'a>, Error> {
     // Parse <pkt-seq-num>?
     let has_seq_num = flags.contains(PktHeaderFlags::HAS_SEQ_NUM);
 
-    let mut seq_num = None;
-    if has_seq_num {
-        seq_num = Some(buf.get_ne_u16()?);
-    }
+    let seq_num = if has_seq_num {
+        Some(buf.get_ne_u16()?)
+    } else {
+        None
+    };
 
     // Parse <tlv-block>?
     let has_tlv = flags.contains(PktHeaderFlags::HAS_TLV);
 
-    let mut block = None;
-    if has_tlv {
-        block = Some(tlv_block(buf)?);
-    }
+    let block = if has_tlv { Some(tlv_block(buf)?) } else { None };
 
     Ok(PktHeader {
         version,
@@ -181,30 +183,27 @@ pub fn address_block<'a>(
 
     // Parse <mid>*
     let mid_length = address_length - head_length - tail_length;
-    let mut mid = None;
-    if mid_length != 0 {
-        mid = Some(buf.get_bytes(mid_length * num_addr)?);
-    }
+    let mid = if mid_length != 0 {
+        Some(buf.get_bytes(mid_length * num_addr)?)
+    } else {
+        None
+    };
 
     // Parse <prefix-length>*
     let has_single_prelen =
         addr_flags.contains(AddressBlockFlags::HAS_SINGLE_PRELEN);
     let has_multi_prelen =
         addr_flags.contains(AddressBlockFlags::HAS_MULTI_PRELEN);
-    let mut prefix_length_fields = 0;
-    match (has_single_prelen, has_multi_prelen) {
+    let prefix_length_fields = match (has_single_prelen, has_multi_prelen) {
         // no fields
-        (false, false) => prefix_length_fields = 0,
+        (false, false) | (true, true) => 0,
         // single field
-        (true, false) => prefix_length_fields = 1,
+        (true, false) => 1,
         // <num-addr> fields
-        (false, true) => prefix_length_fields = num_addr,
-        // ignore both
-        (true, true) => (),
-    }
+        (false, true) => num_addr,
+    };
 
-    let mut prefix_lengths = None;
-    if prefix_length_fields != 0 {
+    let prefix_lengths = if prefix_length_fields != 0 {
         let pfs = buf.get_bytes(prefix_length_fields)?;
         for pf in pfs {
             if usize::from(*pf) > (8 * address_length) {
@@ -212,8 +211,10 @@ pub fn address_block<'a>(
             }
         }
 
-        prefix_lengths = Some(pfs);
-    }
+        Some(pfs)
+    } else {
+        None
+    };
 
     Ok(AddressBlock {
         num_addr,
@@ -239,10 +240,11 @@ pub fn tlv<'a>(buf: &mut Buf<'a>) -> Result<Tlv<'a>, Error> {
     let flags = buf.get_u8().map(TlvFlags::from_bits)?.unwrap();
 
     // Parse <tlv-type-ext> if exists
-    let mut type_ext = None;
-    if flags.contains(TlvFlags::HAS_TYPE_EXT) {
-        type_ext = Some(buf.get_u8()?);
-    }
+    let type_ext = if flags.contains(TlvFlags::HAS_TYPE_EXT) {
+        Some(buf.get_u8()?)
+    } else {
+        None
+    };
 
     // Parse (<index-start><index-end>?)?
     let has_single_idx = flags.contains(TlvFlags::HAS_SINGLE_INDEX);
