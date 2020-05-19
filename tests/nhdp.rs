@@ -44,7 +44,7 @@ const RESULT: &[u8] = &[
 
 #[test]
 fn test_parse_nhdp() {
-    let pkt = rfc5444::read_packet(RESULT).unwrap();
+    let pkt = rfc5444::Packet::read(RESULT).unwrap();
 
     assert_eq!(pkt.hdr.version, 0);
     assert!(pkt.hdr.seq_num.is_none());
