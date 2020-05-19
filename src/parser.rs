@@ -16,7 +16,7 @@ use crate::{
 };
 
 /// Read an RFC 5444 packet
-pub fn read_packet<'a>(buf: &'a [u8]) -> Result<Packet<'a>, Error> {
+pub fn read_packet(buf: &[u8]) -> Result<Packet<'_>, Error> {
     let mut buf = Buf::new(buf);
 
     let hdr = pkt_header(&mut buf)?;
