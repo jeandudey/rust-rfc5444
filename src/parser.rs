@@ -183,7 +183,7 @@ pub fn address_block<'a>(
     let mid_length = address_length - head_length - tail_length;
     let mut mid = None;
     if mid_length != 0 {
-        mid = Some(buf.get_bytes(mid_length)?);
+        mid = Some(buf.get_bytes(mid_length * num_addr)?);
     }
 
     // Parse <prefix-length>*
