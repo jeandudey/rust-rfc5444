@@ -11,11 +11,9 @@
 use crate::Error;
 
 macro_rules! make_slice {
-    ($buf:expr, $off:expr, $count:expr) => {{
-        let buf = &$buf[$off..];
-        let buf = &buf[..$count];
-        buf
-    }};
+    ($buf:expr, $off:expr, $count:expr) => {
+        &((&$buf[$off..])[..$count])
+    };
 }
 
 #[test]
