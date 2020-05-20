@@ -60,11 +60,4 @@ fn test_parse_nhdp() {
     assert!(msg.hdr.seq_num.is_none());
 
     assert!(msg.tlv_block.iter().next().is_none());
-
-    println!("pkt {:?}", pkt);
-    println!("msg {:?}", msg.address_tlv);
-
-    for pair in msg.address_tlv.iter() {
-        let _pair = pair.unwrap();
-    }
 }

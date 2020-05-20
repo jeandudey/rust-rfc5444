@@ -10,6 +10,9 @@
 
 use crate::{Buf, Error, TlvBlock};
 
+/// Maximum length of an address in octets.
+pub const MAX_ADDR_LEN: usize = 16;
+
 /// Address-TLVs
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AddressTlvs<'a> {
@@ -57,6 +60,25 @@ impl<'a> Iterator for AddressTlvIter<'a> {
         };
 
         Some(Ok((address_block, tlv_block)))
+    }
+}
+
+/// An abstract address
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub struct Address {
+    buf: [u8; MAX_ADDR_LEN],
+    len: usize,
+}
+
+impl Address {
+    /// Get the bytes of the address.
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.buf[..self.len]
+    }
+
+    /// Address length in bytes.
+    pub fn len(&self) -> usize {
+        self.len
     }
 }
 
@@ -159,6 +181,45 @@ impl<'a> AddressBlock<'a> {
             mid,
             prefix_lengths,
         })
+    }
+
+    /// Retrieve an address from the address block.
+    pub fn get_addr(&self, index: usize) -> Address {
+        assert!(index < self.num_addr);
+
+        let mut addr = Address {
+            buf: [0u8; MAX_ADDR_LEN],
+            len: 0,
+        };
+
+        if let Some(head) = self.head {
+            for (i, b) in head.iter().enumerate() {
+                addr.buf[i] = *b;
+            }
+
+            addr.len += head.len();
+        }
+
+        if let Some(mid) = self.mid {
+            let mid_sz = mid.len() / self.num_addr;
+            let addr_mid = &mid[mid_sz * index..];
+            let addr_mid = &addr_mid[..mid_sz];
+            for (i, b) in addr_mid.iter().enumerate() {
+                addr.buf[addr.len + i] = *b;
+            }
+
+            addr.len += mid_sz;
+        }
+
+        if let Some(tail) = self.tail {
+            for (i, b) in tail.iter().enumerate() {
+                addr.buf[addr.len + i] = *b;
+            }
+
+            addr.len += tail.len();
+        }
+
+        addr
     }
 }
 

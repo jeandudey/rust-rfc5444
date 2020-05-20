@@ -70,7 +70,7 @@ mod msg;
 mod packet;
 mod tlv;
 
-pub use addrtlv::{AddressBlock, AddressTlvIter, AddressTlvs};
+pub use addrtlv::{AddressBlock, AddressTlvIter, AddressTlvs, MAX_ADDR_LEN};
 pub use buf::Buf;
 pub use error::Error;
 pub use msg::{Message, MessageIter, Messages, MsgHeader};
