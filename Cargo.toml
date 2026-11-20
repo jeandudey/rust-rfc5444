@@ -12,19 +12,14 @@ categories = ["no-std"]
 description = """
 A library that can read/write messages of the RFC 5444 standard
 """
-exclude = [".travis.yml"]
-# TODO: support old compilers
-edition = "2018"
+edition = "2024"
 
 [workspace]
 members = ["crfc5444"]
 
-[badges]
-travis-ci = { repository = "jeandudey/rust-rfc5444" }
-
 [dependencies]
-bitflags = "1"
+bitflags = "2"
 
 [features]
-default = ["use_std"]
-use_std = []
+default = ["std"]
+std = []

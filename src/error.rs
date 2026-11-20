@@ -19,7 +19,7 @@ pub enum Error {
     InvalidVersion,
 }
 
-#[cfg(feature = "use_std")]
+#[cfg(feature = "std")]
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         match *self {
@@ -32,5 +32,5 @@ impl std::fmt::Display for Error {
     }
 }
 
-#[cfg(feature = "use_std")]
+#[cfg(feature = "std")]
 impl std::error::Error for Error {}

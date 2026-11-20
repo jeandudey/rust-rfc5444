@@ -55,10 +55,10 @@
 //! # Features
 //!
 //! - `use_std`: (default) enables usage of `std`, disable it to be compatible
-//! with `no_std`.
+//!   with `no_std`.
 
 #![warn(missing_docs)]
-#![cfg_attr(not(feature = "use_std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[macro_use]
 extern crate bitflags;
